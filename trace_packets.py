@@ -34,7 +34,7 @@ def fetch_geolocation(ip_address):
     url = f"https://ipinfo.io/{ip_address}/json?token={TOKEN}"
     response = requests.get(url)
     data = response.json()
-    return {key: data.get(key, 'Information not available') for key in ['country', 'region', 'city', 'loc']}
+    return {key: data.get(key, 'Information not available') for key in ['country', 'region', 'city', 'loc', 'org']}
 
 def calculate_haversine_distance(origin, destination):
     """
@@ -70,7 +70,8 @@ def run_tracert(destination, q):
     cmd = f"tracert -d {destination}"
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, text=True)
     for line in iter(proc.stdout.readline, ''):
-        ip_match = re.search(r'([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}', line)
+        #ip_match = re.search(r'([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}', line)
+        ip_match = re.search(r"([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)", line)
         ms_match = re.search(r'(\d+)\sms', line)
         ip_address = ip_match.group() if ip_match else None
         avg_ms = ms_match.group(1) if ms_match else None
@@ -88,15 +89,23 @@ def main(destination):
     try:
         prev_coords = None
         q = queue.Queue()
+
+        print("Starting traceroute operation...")
         tracert_thread = threading.Thread(target=run_tracert, args=(destination, q))
         tracert_thread.start()
 
         while True:
+            print("Waiting for response from traceroute...")
             item = q.get()
+            
             if item is None:
+                print("Traceroute operation completed.")
                 break
+
             if item['ip']:
+                print(f"Fetching geolocation information for IP: {item['ip']}")
                 geo_data = fetch_geolocation(item['ip'])
+                
                 try:
                     current_coords = tuple(map(float, geo_data['loc'].split(',')))
                 except ValueError:
@@ -111,8 +120,9 @@ def main(destination):
                 print(geo_data)
 
         tracert_thread.join()
+
     except KeyboardInterrupt:
-        logging.info("Interrupted by user. Cleaning up...")
+        print("Interrupted by user. Cleaning up...")
         tracert_thread.join()
 
 if __name__ == "__main__":
