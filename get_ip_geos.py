@@ -1,145 +1,120 @@
-import requests, json, subprocess, re, os, sys, math, queue, threading
+import requests
+import json
+import subprocess
+import re
+import os
+import sys
+import math
+import queue
+import threading
+import logging
 
-path = os.path.dirname(__file__)
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
 
-# read token from token.json
-with open(path+'/token.json', 'r') as f:
-    token = json.load(f)['token']
+# Constants
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'token.json')
+KM_TO_MILES = 0.621371
+EARTH_RADIUS_KM = 6371
 
-# Function to fetch geolocation data for a given IP address
-def ip_geo(ip_address):
+# Read API token
+with open(CONFIG_PATH, 'r') as f:
+    TOKEN = json.load(f)['token']
+
+def fetch_geolocation(ip_address):
     """
-    Fetches geolocation data for a given IP address using the ipinfo.io API.
+    Fetches geolocation information of a given IP address.
 
     Parameters:
-        ip_address (str): The IP address to fetch geolocation data for.
+        ip_address (str): The IP address.
 
     Returns:
-        filtered_data (dict): A dictionary containing the geolocation data for the IP address. The dictionary
-        contains the following keys:
-            - 'country': The country where the IP address is located.
-            - 'region': The region where the IP address is located.
-            - 'city': The city where the IP address is located.
-            - 'loc': The latitude and longitude of the IP address in the format 'latitude,longitude'.
+        dict: A dictionary containing geolocation information.
     """
-    url = f"https://ipinfo.io/{ip_address}/json?token={token}"
+    url = f"https://ipinfo.io/{ip_address}/json?token={TOKEN}"
     response = requests.get(url)
     data = response.json()
-    filtered_data = {key: data.get(key, 'Information not available') for key in ['country', 'region', 'city', 'loc']}
-    return filtered_data
+    return {key: data.get(key, 'Information not available') for key in ['country', 'region', 'city', 'loc']}
 
-# Function to calculate haversize distance between two points on earth
-def haversine_distance(origin, destination):
-    lat1, lon1 = origin
-    lat2, lon2 = destination
-    radius = 6371 # km
-
-    dlat = math.radians(lat2-lat1)
-    dlon = math.radians(lon2-lon1)
-    a = math.sin(dlat/2) * math.sin(dlat/2) + math.cos(math.radians(lat1)) \
-        * math.cos(math.radians(lat2)) * math.sin(dlon/2) * math.sin(dlon/2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-    d = radius * c
-
-    return round(d, 2)
-
-# Function to perform a traceroute to a given IP destination
-def tracert(ip_dest, q):
+def calculate_haversine_distance(origin, destination):
     """
-    Performs a traceroute to a given IP destination and returns the response times for each IP address along the route.
+    Calculates the haversine distance between two geographical points.
 
     Parameters:
-        ip_dest (str): The IP address or domain name to perform the traceroute to.
+        origin (tuple): A tuple containing the latitude and longitude of the origin.
+        destination (tuple): A tuple containing the latitude and longitude of the destination.
 
     Returns:
-        ip_ms_dict (dict): A dictionary containing the response times for each IP address along the route. The
-        dictionary contains the IP addresses as keys and a dictionary with the average response time in milliseconds
-        as the value. The dictionary has the following format:
-            {
-                'ip_address_1': {'avg_ms': response_time_1},
-                'ip_address_2': {'avg_ms': response_time_2},
-                ...
-            }
+        float: The haversine distance in miles.
     """
-    ipv6_pattern = r"\d+\s+\d+\sms\s+(?P<time2>\d+)\sms\s+\d+\sms\s+(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}"
-    avg_ms_pattern =  r"\d+\s+\d+\sms\s+(?P<avg_ms>\d+)\sms\s+\d+\sms\s+([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}"
-    cmd = f"tracert -d {ip_dest}"
+    lat1, lon1 = origin
+    lat2, lon2 = destination
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    distance_km = EARTH_RADIUS_KM * c
+    return round(distance_km * KM_TO_MILES, 2)
+
+def run_tracert(destination, q):
+    """
+    Calculates the haversine distance between two geographical points.
+
+    Parameters:
+        origin (tuple): A tuple containing the latitude and longitude of the origin.
+        destination (tuple): A tuple containing the latitude and longitude of the destination.
+
+    Returns:
+        float: The haversine distance in miles.
+    """
+    cmd = f"tracert -d {destination}"
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, text=True)
-
     for line in iter(proc.stdout.readline, ''):
-        ip_address = None
-        avg_ms = None
-
-        ip_match = re.search(ipv6_pattern, line)
-        ms_match = re.search(avg_ms_pattern, line)
-
-        if ip_match:
-            ip_address = ip_match.group().split()[-1]
-        if ms_match:
-            avg_ms = ms_match.group("avg_ms")
-            
+        ip_match = re.search(r'([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}', line)
+        ms_match = re.search(r'(\d+)\sms', line)
+        ip_address = ip_match.group() if ip_match else None
+        avg_ms = ms_match.group(1) if ms_match else None
         if ip_address or avg_ms:
             q.put({'ip': ip_address, 'avg_ms': avg_ms})
-
-    q.put(None) # Signal that tracert is done
+    q.put(None)  # Signal that traceroute is complete
 
 def main(destination):
-    try:
-        prev_coords = None  # Initialize prev_coords
-        q = queue.Queue()  # Initialize the queue to hold tracert data
+    """
+    The main function that coordinates the traceroute and geolocation fetching.
 
-        # Start tracert in a separate thread
-        tracert_thread = threading.Thread(target=tracert, args=(destination, q))
+    Parameters:
+        destination (str): The destination IP or URL.
+    """
+    try:
+        prev_coords = None
+        q = queue.Queue()
+        tracert_thread = threading.Thread(target=run_tracert, args=(destination, q))
         tracert_thread.start()
 
-        tracert_done = False  # Flag to indicate if tracert is done
-
-        while not (tracert_done and q.empty()):  # Continue until tracert is done and the queue is empty
-            try:
-                ms_data = q.get(timeout=10)  # Adjust the timeout as needed
-
-                if ms_data is None:  # Check for the signal that tracert is done
-                    tracert_done = True
-                    continue  # Skip the rest of the loop for this iteration
-
-                ip = ms_data['ip']
-                result = ip_geo(ip)
-
-                # Get latitude and longitude for the current IP address
+        while True:
+            item = q.get()
+            if item is None:
+                break
+            if item['ip']:
+                geo_data = fetch_geolocation(item['ip'])
                 try:
-                    current_coords = tuple(map(float, result['loc'].split(','))) if 'loc' in result else None
+                    current_coords = tuple(map(float, geo_data['loc'].split(',')))
                 except ValueError:
                     current_coords = None
 
-                # If both prev_coords and current_coords are available, calculate the haversine distance
                 if prev_coords and current_coords:
-                    distance = haversine_distance(prev_coords, current_coords)
-                    result['distance_miles'] = distance * 0.621371  # Convert km to miles
+                    distance = calculate_haversine_distance(prev_coords, current_coords)
+                    geo_data['distance_miles'] = distance
 
-                # Update prev_coords for the next iteration
                 prev_coords = current_coords
+                geo_data.update(item)
+                print(geo_data)
 
-                result.update(ms_data)  # Add avg_ms to the result dictionary
-                result['ip'] = ip  # Add the IP address to the result dictionary
-
-                print(result)
-
-            except queue.Empty:
-                if not tracert_done:
-                    continue  # Just continue if the queue is empty but tracert isn't done yet
-
-        tracert_thread.join()  # Wait for the tracert_thread to finish
-
+        tracert_thread.join()
     except KeyboardInterrupt:
-        print('Exiting... Please wait for the tracert thread to finish.')
-        tracert_thread.join()  # Wait for the tracert_thread to finish
-        exit(0)
+        logging.info("Interrupted by user. Cleaning up...")
+        tracert_thread.join()
 
-# Main program execution starts here
-if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        destination = sys.argv[1]
-    else:
-        destination = 'youtube.com' # or ipv4/6 address
-
-    main(destination) # Call main() function
+if __name__ == "__main__":
+    destination = sys.argv[1] if len(sys.argv) > 1 else "youtube.com"
+    main(destination)
