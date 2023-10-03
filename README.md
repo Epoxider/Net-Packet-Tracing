@@ -1,13 +1,13 @@
-## Net-Packet-Tracing
-### Tool for network administrators or developers to diagnose network issues and gather information about the geolocation of IP addresses along a network route.
+# Net-Packet-Tracing
+## Tool for network administrators or developers to diagnose network issues and gather information about the geolocation of IP addresses along a network route.
 
-#### Requirements
+### Requirements
 - Windows
 - API token from [IPinfo](https://ipinfo.io/) (as of 10/03/2023 there is a basic plan for personal use).
 - Python 3.x
 - pandas
 - requests
-#### Usage
+### Usage
 Save your API token a file called "token.json" inside this folder. The token.json file should look something like:\
 ```{"token": "YOUR TOKEN HERE"}```\
 \
@@ -16,7 +16,7 @@ To run the script, simply execute the following command:\
 
 Replace [destination] with the IP address or domain name of the destination you want to trace. If no destination is specified, the script will default to tracing the route to youtube.com.
 
-#### Output
+### Output
 The script outputs a CSV file named trace_results.csv in the same directory as the script. The file contains the following columns:
 
 - ip: The IP address of the hop.
@@ -38,5 +38,5 @@ Example:
 | US                        | State   | City   | lat,lon  | Organization                              | IP Address| 19     | 0.0            |
 
 
-#### License
+### License
 This script is licensed under the MIT License. See the LICENSE file for details.
