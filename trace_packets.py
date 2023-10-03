@@ -9,6 +9,7 @@ import queue
 import threading
 import logging
 import pandas as pd
+from datetime import datetime
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
@@ -89,8 +90,6 @@ def main(destination):
     """
     if any(char.isalpha() for char in destination):
         dest_name = destination.split('.')[0]
-        with open(f'{PARENT_PATH}/{dest_name}_route.json', 'a+') as f:
-            f.truncate(0)
     else:
         dest_name = destination
 
@@ -114,7 +113,12 @@ def main(destination):
 
             if item['ip']:
                 logging.info(f"Fetching geolocation information for IP: {item['ip']}")
+
                 geo_data = fetch_geolocation(item['ip'])
+
+                # Adding current time to the geo_data dictionary
+                current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                geo_data['current_time'] = current_time
                 
                 try:
                     current_coords = tuple(map(float, geo_data['loc'].split(',')))
