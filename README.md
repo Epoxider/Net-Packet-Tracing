@@ -1,4 +1,4 @@
-# Net-Packet-Tracing
+## Net-Packet-Tracing
 ### Tool for network administrators or developers to diagnose network issues and gather information about the geolocation of IP addresses along a network route.
 
 #### Requirements
@@ -7,7 +7,8 @@
 - pandas
 - requests
 #### Usage
-To run the script, simply execute the following command:
+To run the script, simply execute the following command:\
+```python trace_packets.py [destination]```
 
 Replace [destination] with the IP address or domain name of the destination you want to trace. If no destination is specified, the script will default to tracing the route to youtube.com.
 
