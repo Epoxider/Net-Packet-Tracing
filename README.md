@@ -3,10 +3,14 @@
 
 #### Requirements
 - Windows
+- API token from IPinfo.io
 - Python 3.x
 - pandas
 - requests
 #### Usage
+Save your API token a file called "token.json" inside this folder. Example contents:\
+```{"token": "YOUR TOKEN HERE"}```\
+\
 To run the script, simply execute the following command:\
 ```python trace_packets.py [destination]```
 
