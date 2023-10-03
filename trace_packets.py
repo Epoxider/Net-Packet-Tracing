@@ -8,17 +8,19 @@ import math
 import queue
 import threading
 import logging
+import pandas as pd
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
 
 # Constants
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'token.json')
+TOKEN_PATH = os.path.join(os.path.dirname(__file__), 'token.json')
+PARENT_PATH = os.path.dirname(__file__)
 KM_TO_MILES = 0.621371
 EARTH_RADIUS_KM = 6371
 
 # Read API token
-with open(CONFIG_PATH, 'r') as f:
+with open(TOKEN_PATH, 'r') as f:
     TOKEN = json.load(f)['token']
 
 def fetch_geolocation(ip_address):
@@ -86,24 +88,35 @@ def main(destination):
     Parameters:
         destination (str): The destination IP or URL.
     """
+    if any(char.isalpha() for char in destination):
+        dest_name = destination.split('.')[0]
+        with open(f'{PARENT_PATH}/{dest_name}_route.json', 'a+') as f:
+            f.truncate(0)
+    else:
+        dest_name = destination
+
+    with open(f'{PARENT_PATH}/{dest_name}_route.json', 'a+') as f:
+        f.truncate(0)
+
+
     try:
         prev_coords = None
         q = queue.Queue()
 
-        print("Starting traceroute operation...")
+        logging.info("Starting traceroute operation...")
         tracert_thread = threading.Thread(target=run_tracert, args=(destination, q))
         tracert_thread.start()
 
         while True:
-            print("Waiting for response from traceroute...")
+            logging.info("Waiting for response from traceroute...")
             item = q.get()
             
             if item is None:
-                print("Traceroute operation completed.")
+                logging.info("Traceroute operation completed.")
                 break
 
             if item['ip']:
-                print(f"Fetching geolocation information for IP: {item['ip']}")
+                logging.info(f"Fetching geolocation information for IP: {item['ip']}")
                 geo_data = fetch_geolocation(item['ip'])
                 
                 try:
@@ -117,12 +130,16 @@ def main(destination):
 
                 prev_coords = current_coords
                 geo_data.update(item)
-                print(geo_data)
+                logging.info(geo_data)
+
+            # check if destination contains any letters, if it does, then remove the .com or .org etc
+            with open(f'{PARENT_PATH}/{dest_name}_route.json', 'a+') as f:
+                json.dump(geo_data, f, indent=4)
 
         tracert_thread.join()
 
     except KeyboardInterrupt:
-        print("Interrupted by user. Cleaning up...")
+        logging.info("Interrupted by user. Cleaning up...")
         tracert_thread.join()
 
 if __name__ == "__main__":
