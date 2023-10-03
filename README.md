@@ -3,7 +3,7 @@
 
 #### Requirements
 - Windows
-- API token from [IPinfo](ipinfo.io|) (as of 10/03/2023 there is a basic plan for personal use).
+- API token from [IPinfo](https://ipinfo.io/) (as of 10/03/2023 there is a basic plan for personal use).
 - Python 3.x
 - pandas
 - requests
