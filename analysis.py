@@ -13,3 +13,17 @@ print(f'Average distance traveled per hop: {avg_distance} miles')
 # get the average time per hop
 avg_time = df['avg_ms'].mean()
 print(f'Average time per hop: {avg_time} ms')
+
+# print the set of cities in order of visit
+cities = df['city'].tolist()
+print(f'Cities visited: {cities}')
+
+# print the set of countries
+countries = set(df['country'])
+print(f'Countries visited: {countries}')
+
+# print the set of organizations
+organizations = set(df['org'])
+print(f'Organizations visited: {organizations}')
+
+

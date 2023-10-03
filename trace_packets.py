@@ -60,19 +60,16 @@ def calculate_haversine_distance(origin, destination):
 
 def run_tracert(destination, q):
     """
-    Calculates the haversine distance between two geographical points.
+    Runs a traceroute to the specified destination and puts the results in a queue.
 
     Parameters:
-        origin (tuple): A tuple containing the latitude and longitude of the origin.
-        destination (tuple): A tuple containing the latitude and longitude of the destination.
-
-    Returns:
-        float: The haversine distance in miles.
+        destination (str): The IP address or domain name of the destination to trace.
+        q (Queue): The queue to put the traceroute results in.
     """
+
     cmd = f"tracert -d {destination}"
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, text=True)
     for line in iter(proc.stdout.readline, ''):
-        #ip_match = re.search(r'([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}', line)
         ip_match = re.search(r"([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)", line)
         ms_match = re.search(r'(\d+)\sms', line)
         ip_address = ip_match.group() if ip_match else None
@@ -95,13 +92,12 @@ def main(destination):
     else:
         dest_name = destination
 
-    with open(f'{PARENT_PATH}/{dest_name}_route.json', 'a+') as f:
-        f.truncate(0)
-
+    csv_filename = f'{PARENT_PATH}/route_data/{dest_name}_route.csv'
 
     try:
         prev_coords = None
         q = queue.Queue()
+        df = pd.DataFrame()
 
         logging.info("Starting traceroute operation...")
         tracert_thread = threading.Thread(target=run_tracert, args=(destination, q))
@@ -131,12 +127,10 @@ def main(destination):
                 prev_coords = current_coords
                 geo_data.update(item)
                 logging.info(geo_data)
-
-            # check if destination contains any letters, if it does, then remove the .com or .org etc
-            with open(f'{PARENT_PATH}/{dest_name}_route.json', 'a+') as f:
-                json.dump(geo_data, f, indent=4)
+                df = pd.concat([df, pd.DataFrame([geo_data])], ignore_index=True)
 
         tracert_thread.join()
+        df.to_csv(csv_filename,mode='w', index=False)
 
     except KeyboardInterrupt:
         logging.info("Interrupted by user. Cleaning up...")
