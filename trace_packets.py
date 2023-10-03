@@ -92,7 +92,7 @@ def main(destination):
     else:
         dest_name = destination
 
-    csv_filename = f'{PARENT_PATH}/route_data/{dest_name}_route.csv'
+    csv_filename = f'{PARENT_PATH}/{dest_name}_route.csv'
 
     try:
         prev_coords = None
