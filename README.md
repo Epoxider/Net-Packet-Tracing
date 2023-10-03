@@ -8,7 +8,7 @@
 - pandas
 - requests
 #### Usage
-Save your API token a file called "token.json" inside this folder. Example contents:\
+Save your API token a file called "token.json" inside this folder. The token.json file should look something like:\
 ```{"token": "YOUR TOKEN HERE"}```\
 \
 To run the script, simply execute the following command:\
