@@ -1,3 +1,4 @@
+import os
 import json
 import re
 import logging
@@ -15,15 +16,13 @@ from config import Config
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
 
-CONFIG = Config()
-global GEN_REPORT
 
 # Read API token
-with open(CONFIG.TOKEN_PATH, 'r') as f:
+token_path = os.path.join(os.path.dirname(__file__), 'token.json')
+with open(token_path, 'r') as f:
     TOKEN = json.load(f)['token']
-    
-    # Function to update map
 
+    
 def fetch_geolocation(ip_address: str) -> Dict[str, Any]:
     """
     Fetches geolocation information of a given IP address.
@@ -46,7 +45,7 @@ def fetch_geolocation(ip_address: str) -> Dict[str, Any]:
 
     return {key: data.get(key, 'N/A') for key in ['country', 'region', 'city', 'loc', 'org']}
 
-def calculate_haversine_distance(origin: Tuple[float, float], destination: Tuple[float, float]) -> float:
+def calculate_haversine_distance(config, origin: Tuple[float, float], destination: Tuple[float, float]) -> float:
     """
     Calculates the haversine distance between two geographical points.
 
@@ -63,10 +62,10 @@ def calculate_haversine_distance(origin: Tuple[float, float], destination: Tuple
     dlon = math.radians(lon2 - lon1)
     a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    distance_km = CONFIG.EARTH_RADIUS_KM * c
-    return round(distance_km * CONFIG.KM_TO_MILES, 2)
+    distance_km = config.earth_radius_km * c
+    return round(distance_km * config.km_to_miles, 2)
 
-def run_tracert(q: queue.Queue) -> None:
+def run_tracert(config, q: queue.Queue) -> None:
     """
     Runs a traceroute to the specified destination and puts the results in a queue.
 
@@ -74,26 +73,23 @@ def run_tracert(q: queue.Queue) -> None:
         destination (str): The IP address or domain name of the destination to trace.
         q (Queue): The queue to put the traceroute results in.
     """
-    cmd = CONFIG.TRACE_CMD
+    cmd = config.trace_cmd
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, text=True)
-
         for line in iter(proc.stdout.readline, ''):
             ip_match = re.search(r"([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)", line)
             ms_match = re.search(r'(\d+)\sms', line)
-
             ip_address = ip_match.group() if ip_match else None
             avg_ms = ms_match.group(1) if ms_match else None
-
             if ip_address or avg_ms:
                 q.put({'ip': ip_address, 'avg_ms': avg_ms})
-
         q.put(None)  # Signal that traceroute is complete
+
     except Exception as e:
         logging.error(f"Error running traceroute: {e}")
         q.put(None)
 
-def main(gen_report: bool) -> None:
+def main(config) -> None:
     """
     The main function that coordinates the traceroute and geolocation fetching.
 
@@ -103,60 +99,49 @@ def main(gen_report: bool) -> None:
     q = queue.Queue()
     df = pd.DataFrame()
     folium_map = FoliumMap()
-
     prev_coords: Optional[Tuple[float, float]] = None
-
     logging.info("Starting traceroute operation...")
-    tracert_thread = threading.Thread(target=run_tracert, args=(q,))
+    tracert_thread = threading.Thread(target=run_tracert, args=(config, q,))
     tracert_thread.start()
-
     try:
         while True:
             logging.info("Waiting for response from traceroute...")
             item = q.get()
-            
             if item is None:
                 logging.info("Traceroute operation completed.")
                 break
-
             if item.get('ip'):
-                logging.info(f"Fetching geolocation information for IP: {item['ip']}")
                 current_time = datetime.now().isoformat()[:-3] + "Z"
                 geo_data = fetch_geolocation(item['ip'])
                 geo_data['current_time'] = current_time
-
                 try:
                     current_coords = tuple(map(float, geo_data['loc'].split(',')))
                 except ValueError:
                     current_coords = None
-
                 if prev_coords and current_coords:
-                    distance = calculate_haversine_distance(prev_coords, current_coords)
+                    distance = calculate_haversine_distance(config, prev_coords, current_coords)
                     geo_data['distance_miles'] = distance
-
                 prev_coords = current_coords
                 geo_data.update(item)
-                logging.info(geo_data)
+                logging.info(f"city = {geo_data['city']} \t org = {geo_data['org']} \t ms = {geo_data['avg_ms']}")
                 df = pd.concat([df, pd.DataFrame([geo_data])], ignore_index=True)
                  # Add Marker for current location
                 if current_coords:
-
                     folium_map.add_marker(current_coords)
-                    
                     # Add these coordinates for PolyLine
                     folium_map.update_line_coords(current_coords)
-                    
                     # Draw PolyLine
                     if len(folium_map.line_coords) > 1:
                         # change color of line based on avg_ms of item, green for < 10ms, yellow for < 20ms, red for > 30ms
                         folium_map.add_line(folium_map.line_coords, item)
-                    
                     # Save or Refresh Map
-                    folium_map.save_map(CONFIG.MAP_PATH)
+                    folium_map.save_map(config.map_path)
+        if config.report_flag:
+            df.to_csv(config.csv_path, mode='w', index=False)
 
-        if gen_report:
-            df.to_csv(CONFIG.CSV_PATH, mode='w', index=False)
     except KeyboardInterrupt:
+        if config.report_flag:
+            df.to_csv(config.csv_path, mode='w', index=False)
         logging.info("Interrupted by user. Cleaning up...")
         tracert_thread.join()
 
@@ -165,8 +150,9 @@ if __name__ == "__main__":
     parser.add_argument('--destination', type=str, nargs='?', help='Destination IP or URL')
     parser.add_argument('--gen_report', action='store_true', help='Generate a CSV file')
     args = parser.parse_args()
-    if args.destination != None:
-        CONFIG.set_destination(args.destination)
-    print(CONFIG.destination)
-    main(args.gen_report)
+    config = Config(args.destination)
+    if args.gen_report:
+        config.set_report_flag(True)
+    print(config.destination)
+    main(config=config)
 
