@@ -66,16 +66,18 @@ def run_tracert(destination, q):
         destination (str): The IP address or domain name of the destination to trace.
         q (Queue): The queue to put the traceroute results in.
     """
-
     cmd = f"tracert -d {destination}"
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, text=True)
+
     for line in iter(proc.stdout.readline, ''):
         ip_match = re.search(r"([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)", line)
         ms_match = re.search(r'(\d+)\sms', line)
         ip_address = ip_match.group() if ip_match else None
         avg_ms = ms_match.group(1) if ms_match else None
+
         if ip_address or avg_ms:
             q.put({'ip': ip_address, 'avg_ms': avg_ms})
+
     q.put(None)  # Signal that traceroute is complete
 
 def main(destination):
@@ -98,7 +100,6 @@ def main(destination):
         prev_coords = None
         q = queue.Queue()
         df = pd.DataFrame()
-
         logging.info("Starting traceroute operation...")
         tracert_thread = threading.Thread(target=run_tracert, args=(destination, q))
         tracert_thread.start()
