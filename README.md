@@ -29,7 +29,6 @@ Example:
 | country                   | region  | city   | loc      | org                                       | ip        | avg_ms | distance_miles |
 |---------------------------|---------|--------|----------|-------------------------------------------|-----------|--------|----------------|
 | US                        | State   | City   | lat,lon  | Organization                              | IP Address|        |                |
-| Information not available |         |        |          |                                           |           |        |                |
 | US                        | State   | City   | lat,lon  | Organization                              | IP Address| 2      |                |
 | US                        | State   | City   | lat,lon  | Organization                              | IP Address| 16     | 45.72          |
 | US                        | State   | City   | lat,lon  | Organization                              | IP Address| 13     | 0.0            |
