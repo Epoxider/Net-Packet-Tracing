@@ -25,18 +25,18 @@ The script outputs a CSV file named trace_results.csv in the same directory as t
 - country: The country where the hop is located.
 - distance_miles: The distance in miles from the previous hop to this hop.
 
-Example:\
-| country                   | region  | city   | loc      | org                                        | ip        | avg_ms | distance_miles |
-|---------------------------|---------|--------|----------|--------------------------------------------|-----------|--------|----------------|
-| US                        | State   | City   | lat,lon  | Organization 1                             | IP Address|        |                |
-| Information not available |         |        |          |                                            |           |        |                |
-| US                        | State   | City   | lat,lon  | Organization 2                             | IP Address| 2      |                |
-| US                        | State   | City   | lat,lon  | Organization 2                             | IP Address| 16     | 45.72          |
-| US                        | State   | City   | lat,lon  | Organization 2                             | IP Address| 13     | 0.0            |
-| US                        | State   | City   | lat,lon  | Organization 2                             | IP Address| 22     | 0.0            |
-| US                        | State   | City   | lat,lon  | Organization 2                             | IP Address| 19     | 1732.8         |
-| US                        | State   | City   | lat,lon  | Organization 1                             | IP Address| 20     | 1732.8         |
-| US                        | State   | City   | lat,lon  | Organization 1                             | IP Address| 19     | 0.0            |
+Example:
+| country                   | region  | city   | loc      | org                                       | ip        | avg_ms | distance_miles |
+|---------------------------|---------|--------|----------|-------------------------------------------|-----------|--------|----------------|
+| US                        | State   | City   | lat,lon  | Organization                              | IP Address|        |                |
+| Information not available |         |        |          |                                           |           |        |                |
+| US                        | State   | City   | lat,lon  | Organization                              | IP Address| 2      |                |
+| US                        | State   | City   | lat,lon  | Organization                              | IP Address| 16     | 45.72          |
+| US                        | State   | City   | lat,lon  | Organization                              | IP Address| 13     | 0.0            |
+| US                        | State   | City   | lat,lon  | Organization                              | IP Address| 22     | 0.0            |
+| US                        | State   | City   | lat,lon  | Organization                              | IP Address| 19     | 1732.8         |
+| US                        | State   | City   | lat,lon  | Organization                              | IP Address| 20     | 1732.8         |
+| US                        | State   | City   | lat,lon  | Organization                              | IP Address| 19     | 0.0            |
 
 
 #### License
