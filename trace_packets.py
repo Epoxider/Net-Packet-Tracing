@@ -1,6 +1,5 @@
 import os
 import json
-import re
 import logging
 import math
 import queue
@@ -42,8 +41,10 @@ def fetch_geolocation(ip_address: str) -> Dict[str, Any]:
     except Exception as e:
         logging.error(f"Error fetching geolocation: {e}")
         return {}
-
-    return {key: data.get(key, 'N/A') for key in ['country', 'region', 'city', 'loc', 'org']}
+    ret = {key: data.get(key, 'N/A') for key in ['country', 'region', 'city', 'loc', 'org']}
+    logging.info(f'IP_ADDRESS----------- {ip_address}')
+    logging.info(f'RET----------- {ret}')
+    return ret
 
 def calculate_haversine_distance(config, origin: Tuple[float, float], destination: Tuple[float, float]) -> float:
     """
@@ -73,14 +74,13 @@ def run_tracert(config, q: queue.Queue) -> None:
         destination (str): The IP address or domain name of the destination to trace.
         q (Queue): The queue to put the traceroute results in.
     """
-    cmd = config.trace_cmd
+    cmd = config.get_cmd()
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, text=True)
         for line in iter(proc.stdout.readline, ''):
-            ip_match = re.search(r"([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)", line)
-            ms_match = re.search(r'(\d+)\sms', line)
-            ip_address = ip_match.group() if ip_match else None
-            avg_ms = ms_match.group(1) if ms_match else None
+            ip_pattern, ms_pattern = config.get_regex(line)
+            ip_address = ip_pattern.group() if ip_pattern else None
+            avg_ms = ms_pattern.group(1) if ms_pattern else None
             if ip_address or avg_ms:
                 q.put({'ip': ip_address, 'avg_ms': avg_ms})
         q.put(None)  # Signal that traceroute is complete
@@ -148,9 +148,10 @@ def main(config) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Traceroute geolocation tool.')
     parser.add_argument('--destination', type=str, nargs='?', help='Destination IP or URL')
+    parser.add_argument('--tool', type=str, nargs='?', help='Specify tracert (windows) or traceroute (unix)')
     parser.add_argument('--gen_report', action='store_true', help='Generate a CSV file')
     args = parser.parse_args()
-    config = Config(args.destination)
+    config = Config(args.destination, args.tool)
     if args.gen_report:
         config.set_report_flag(True)
     print(config.destination)
