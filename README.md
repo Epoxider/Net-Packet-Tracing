@@ -2,22 +2,29 @@
 ## Tool for network administrators or developers to diagnose network issues and gather information about the geolocation of IP addresses along a network route.
 
 ### Requirements
-- Windows
 - API token from [IPinfo](https://ipinfo.io/) (as of 10/03/2023 there is a basic plan for personal use).
 - Python 3.x
 - pandas
+- folium
 - requests
 ### Usage
 Save your API token a file called "token.json" inside this folder. The token.json file should look something like:\
 ```{"token": "YOUR TOKEN HERE"}```\
+
+Install the required Python packages:
+```pip install -r requirements.txt```
 \
 To run the script, simply execute the following command:\
-```python trace_packets.py [destination]```
+```python main.py --destination [destination] --tool [traceroute|tracert] [--gen_report]```
 
-Replace [destination] with the IP address or domain name of the destination you want to trace. If no destination is specified, the script will default to tracing the route to youtube.com.
+- Replace [destination] with the IP address or domain name of the destination you want to trace. If no destination is specified, the script will default to tracing the route to youtube.com.
+- Use --tool to specify whether to use traceroute (Unix/Linux) or tracert (Windows).
+- Use --gen_report to generate a CSV report.
 
 ### Output
-The script outputs a CSV file named trace_results.csv in the same directory as the script. The file contains the following columns:
+The script outputs:
+1. CSV file named trace_results.csv in the same directory as the script. The file contains the following columns:
+2. An HTML map file named [short_dest_name]_map.html in the same directory as the script.
 
 - country: Country where the hop is located.
 - region: Region where the hop is located.

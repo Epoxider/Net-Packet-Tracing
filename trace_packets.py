@@ -42,8 +42,6 @@ def fetch_geolocation(ip_address: str) -> Dict[str, Any]:
         logging.error(f"Error fetching geolocation: {e}")
         return {}
     ret = {key: data.get(key, 'N/A') for key in ['country', 'region', 'city', 'loc', 'org']}
-    logging.info(f'IP_ADDRESS----------- {ip_address}')
-    logging.info(f'RET----------- {ret}')
     return ret
 
 def calculate_haversine_distance(config, origin: Tuple[float, float], destination: Tuple[float, float]) -> float:
