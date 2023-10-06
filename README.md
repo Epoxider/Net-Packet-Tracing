@@ -9,10 +9,10 @@
 - requests
 ### Usage
 Save your API token a file called "token.json" inside this folder. The token.json file should look something like:\
-```{"token": "YOUR TOKEN HERE"}```\
+```{"token": "YOUR TOKEN HERE"}```
 
 Install the required Python packages:
-```pip install -r requirements.txt```\
+```pip install -r requirements.txt```
 
 To run the script, simply execute the following command:\
 ```python main.py --destination [destination] --tool [traceroute|tracert] [--gen_report]```
