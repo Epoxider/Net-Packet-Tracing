@@ -18,7 +18,7 @@ To run the script, simply execute the following command:\
 ```python main.py --destination [destination] --tool [traceroute|tracert] [--gen_report]```
 
 - Replace [destination] with the IP address or domain name of the destination you want to trace. If no destination is specified, the script will default to tracing the route to youtube.com.
-- Use --tool to specify whether to use traceroute (Unix/Linux) or tracert (Windows).
+- Use --tool to specify whether to use "traceroute" (Unix/Linux) or "tracert" (Windows).
 - Use --gen_report to generate a CSV report.
 
 ### Output
