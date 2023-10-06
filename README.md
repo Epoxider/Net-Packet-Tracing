@@ -23,8 +23,8 @@ To run the script, simply execute the following command:\
 
 ### Output
 The script outputs:
-1. CSV file named trace_results.csv in the same directory as the script. The file contains the following columns:
-2. An HTML map file named [short_dest_name]_map.html in the same directory as the script.
+1. An HTML map file named [short_dest_name]_map.html in the same directory as the script.
+2. CSV file named trace_results.csv in the same directory as the script. The file contains the following columns:
 
 - country: Country where the hop is located.
 - region: Region where the hop is located.
