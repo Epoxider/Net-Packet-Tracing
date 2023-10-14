@@ -145,8 +145,8 @@ def main(config) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Traceroute geolocation tool.')
-    parser.add_argument('--destination', type=str, nargs='?', help='Destination IP or URL')
-    parser.add_argument('--tool', type=str, nargs='?', help='Specify tracert (windows) or traceroute (unix)')
+    parser.add_argument('--destination', type=str, default=default_dest, help='Destination IP or URL')
+    parser.add_argument('--tool', type=str, default='tracert', help='Specify tracert (windows) or traceroute (unix)')
     parser.add_argument('--gen_report', action='store_true', help='Generate a CSV file')
     args = parser.parse_args()
     config = Config(args.destination, args.tool)
