@@ -49,6 +49,7 @@ def calculate_haversine_distance(config, origin: Tuple[float, float], destinatio
     Calculates the haversine distance between two geographical points.
 
     Parameters:
+        config (class): The defined config.
         origin (tuple): A tuple containing the latitude and longitude of the origin.
         destination (tuple): A tuple containing the latitude and longitude of the destination.
 
@@ -69,7 +70,7 @@ def run_tracert(config, q: queue.Queue) -> None:
     Runs a traceroute to the specified destination and puts the results in a queue.
 
     Parameters:
-        destination (str): The IP address or domain name of the destination to trace.
+        config (class): The defined config.
         q (Queue): The queue to put the traceroute results in.
     """
     cmd = config.get_cmd()
@@ -92,7 +93,7 @@ def main(config) -> None:
     The main function that coordinates the traceroute and geolocation fetching.
 
     Parameters:
-        destination (str): The destination IP or URL.
+        config (class): The defined config.
     """
     q = queue.Queue()
     df = pd.DataFrame()
@@ -145,7 +146,7 @@ def main(config) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Traceroute geolocation tool.')
-    parser.add_argument('--destination', type=str, default=default_dest, help='Destination IP or URL')
+    parser.add_argument('--destination', type=str, default='youtube.com', help='Destination IP or URL')
     parser.add_argument('--tool', type=str, default='tracert', help='Specify tracert (windows) or traceroute (unix)')
     parser.add_argument('--gen_report', action='store_true', help='Generate a CSV file')
     args = parser.parse_args()
