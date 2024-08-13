@@ -45,7 +45,7 @@ class FoliumMap():
             &nbsp; <b>Legend</b> <br>
             &nbsp; avg ms < 20ms &nbsp; <i class="fa fa-circle" style="color:green"></i><br>
             &nbsp; avg ms < 30ms &nbsp; <i class="fa fa-circle" style="color:yellow"></i><br>
-            &nbsp; avg ms > 40ms nbsp; <i class="fa fa-circle" style="color:red"></i><br>
+            &nbsp; avg ms > 40ms &nbsp; <i class="fa fa-circle" style="color:red"></i><br>
             &nbsp; no data &nbsp; <i class="fa fa-circle" style="color:blue"></i><br>
         </div>
         {% endmacro %}
