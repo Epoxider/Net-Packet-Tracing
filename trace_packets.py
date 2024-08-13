@@ -132,7 +132,7 @@ def main(config) -> None:
                     # Draw PolyLine
                     if len(folium_map.line_coords) > 1:
                         # change color of line based on avg_ms of item, green for < 10ms, yellow for < 20ms, red for > 30ms
-                        folium_map.add_line(folium_map.line_coords)
+                        folium_map.add_line(folium_map.line_coords, item)
                     # Save or Refresh Map
                     folium_map.save_map(config.map_path)
         if config.report_flag:
